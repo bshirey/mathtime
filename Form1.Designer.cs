@@ -50,6 +50,7 @@
             this.fileMenuStrip = new System.Windows.Forms.MenuStrip();
             this.fileExitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.startNewSessionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.redeemTokensToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.showSessionStatusToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -294,6 +295,7 @@
             // 
             this.fileExitMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.startNewSessionToolStripMenuItem,
+            this.redeemTokensToolStripMenuItem,
             this.exitToolStripMenuItem});
             this.fileExitMenuItem.Name = "fileExitMenuItem";
             this.fileExitMenuItem.Size = new System.Drawing.Size(37, 20);
@@ -305,6 +307,14 @@
             this.startNewSessionToolStripMenuItem.Size = new System.Drawing.Size(167, 22);
             this.startNewSessionToolStripMenuItem.Text = "Start &New Session";
             this.startNewSessionToolStripMenuItem.Click += new System.EventHandler(this.startNewSessionToolStripMenuItem_Click);
+            // 
+            // redeemTokensToolStripMenuItem
+            // 
+            this.redeemTokensToolStripMenuItem.Enabled = false;
+            this.redeemTokensToolStripMenuItem.Name = "redeemTokensToolStripMenuItem";
+            this.redeemTokensToolStripMenuItem.Size = new System.Drawing.Size(167, 22);
+            this.redeemTokensToolStripMenuItem.Text = "&Redeem Tokens";
+            this.redeemTokensToolStripMenuItem.Click += new System.EventHandler(this.redeemTokensToolStripMenuItem_Click);
             // 
             // exitToolStripMenuItem
             // 
@@ -383,6 +393,7 @@
         private System.Windows.Forms.TextBox thousandsCarryNotesTextBox;
         private System.Windows.Forms.TextBox hundredsCarryNotesTextBox;
         private System.Windows.Forms.TextBox tensCarryNotesTextBox;
+        private System.Windows.Forms.ToolStripMenuItem redeemTokensToolStripMenuItem;
     }
 }
 

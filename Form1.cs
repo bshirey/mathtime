@@ -15,6 +15,7 @@ namespace MathTime
         private List<MathTimeEquation> equationsForSession;
         private int currentEquationIndex;
         private String studentIdentifier;
+        private int studentTokens;
 
         static private int MaxHighPRequestCount = 2;
 
@@ -155,6 +156,7 @@ namespace MathTime
             this.CheckDigitTimes();
             this.CheckEquationSolutionTime();
             this.CheckForCorrectSolution();
+            this.CheckTokensEarned();
 
             this.currentEquationIndex = this.currentEquationIndex + 1;
 
@@ -172,7 +174,25 @@ namespace MathTime
             {
                 this.currentEquationIndex = equationsForSession.Count - 1;
                 this.nextEquationButton.Enabled = false;
+
+                int totalTokensEarned = 0;
+                foreach(MathTimeEquation eq in equationsForSession)
+                {
+                    totalTokensEarned += eq.tokenEarnedValue;
+                }
+
                 WriteResultsToFile();
+
+                if (totalTokensEarned > 0)
+                {
+                    MessageBox.Show("Congratulations! You have earned " + totalTokensEarned.ToString() + " tokens during this session!");
+                }
+                else
+                {
+                    MessageBox.Show("I am sorry. You have not earned any tokens this session.");
+                }
+
+                MessageBox.Show("Congratulations! You now have a total of " + this.studentTokens.ToString() + " tokens.");
             }
 
             this.CheckForEnabledSolutionDigits();
@@ -185,17 +205,23 @@ namespace MathTime
 
         private void WriteResultsToFile()
         {
-            TimeSpan unixTimeSpan = (DateTime.UtcNow - new DateTime(1970,1,1,0,0,0));
+            TimeSpan unixTimeSpan = (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0));
             double unixTime = unixTimeSpan.TotalSeconds;
 
-            string directoryString = Directory.GetCurrentDirectory() + "\\results\\" + this.studentIdentifier;
-            Directory.CreateDirectory(directoryString);
+            this.WriteResultsCsvFile(ResultsDirectory, unixTime);
+            this.WriteLogsFile(ResultsDirectory, unixTime);
+            this.WriteTokenFile(ResultsDirectory);
 
+            this.ClearPreviousSession();
+        }
+
+        private void WriteResultsCsvFile(String directoryString, double unixTime)
+        {
             try
             {
                 String fileName = String.Format("results_{0:d}.csv", (uint)unixTime);
-                TextWriter writer = new StreamWriter(directoryString + "\\" + fileName);
-                writer.WriteLine("EqNum,SolutionElapsedTime,ThousandsFocusToEnterTime,HundredsFocusToEnterTime,TensFocusToEnterTime,OnesFocusToEnterTime,Equation,Solution,UserAnswer,Correct?");
+                TextWriter writer = new StreamWriter(directoryString + fileName);
+                writer.WriteLine("EqNum,SolutionElapsedTime,ThousandsFocusToEnterTime,HundredsFocusToEnterTime,TensFocusToEnterTime,OnesFocusToEnterTime,Equation,Solution,UserAnswer,Correct?,EarnedTokens");
                 int i = 0;
                 foreach (MathTimeEquation eq in this.equationsForSession)
                 {
@@ -213,6 +239,7 @@ namespace MathTime
                         writer.Write("True");
                     else
                         writer.Write("False");
+                    writer.WriteLine(eq.tokenEarnedValue.ToString());
                     writer.WriteLine();
                 }
                 writer.Close();
@@ -223,11 +250,14 @@ namespace MathTime
             {
                 MessageBox.Show("There was an error saving the session results.  Possibly could not create the data file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
 
+        private void WriteLogsFile(String directoryString, double unixTime)
+        {
             try
             {
                 String fileName = String.Format("results_{0:d}.log", (uint)unixTime);
-                TextWriter writer = new StreamWriter(directoryString + "\\" + fileName);
+                TextWriter writer = new StreamWriter(directoryString + fileName);
                 foreach (String s in this.statusTextListBox.Items)
                 {
                     writer.WriteLine(s);
@@ -238,8 +268,27 @@ namespace MathTime
             {
                 MessageBox.Show("There was an error saving the log file.  Possibly could not create the file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
 
-            this.ClearPreviousSession();
+        private void WriteTokenFile(String directoryString)
+        {
+            try
+            {
+                // calcuate the total number of earned tokens for this session
+                foreach (MathTimeEquation eq in this.equationsForSession)
+                {
+                    this.studentTokens += eq.tokenEarnedValue;
+                }
+
+                String fileName = directoryString + "tokens.dat";
+                TextWriter writer = new StreamWriter(fileName);
+                writer.WriteLine(this.studentTokens.ToString());
+                writer.Close();
+            }
+            catch (IOException)
+            {
+                MessageBox.Show("There was an error saving the tokens to the token file.  Possibly could not create or open the file.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void AddStatusMessageAndScroll(String msg)
@@ -247,6 +296,19 @@ namespace MathTime
             this.statusTextListBox.Items.Add(msg);
             this.statusTextListBox.SelectedIndex = this.statusTextListBox.Items.Count - 1;
             this.statusTextListBox.SelectedIndex = -1;
+        }
+
+        private void CheckTokensEarned()
+        {
+            MathTimeEquation currEq = equationsForSession[currentEquationIndex];
+            currEq.tokenEarnedValue = this.GetTokensEarnedForEquation(currEq);
+
+            if (!currEq.wasCorrect)
+            {
+                currEq.tokenEarnedValue = 0;
+            }
+
+            AddStatusMessageAndScroll(String.Format("Equation {0:d} earned {1:d} tokens.", currentEquationIndex + 1, currEq.tokenEarnedValue));
         }
 
         private void CheckDigitTimes()
@@ -558,10 +620,68 @@ namespace MathTime
         private void StartNewSession(int minValue, int maxValue, bool splitEquations, int maxRandomEquations)
         {
             this.GenerateEquations(minValue, maxValue, splitEquations, maxRandomEquations);
+            this.GetExistingTokens();
             this.currentEquationIndex = 0;
             this.UpdateProgressLabel();
             CheckForEnabledSolutionDigits();
             ShowCurrentEquation();
+        }
+
+        private int GetTokensEarnedForEquation(MathTimeEquation eq)
+        {
+            /*
+             * For single digit equations:
+             * - 3 token for < 4 seconds
+             * - 2 token for 4->7 seconds
+             * - 1 token for > 7 seconds
+             * 
+             * For triple digit equations:
+             * - 5 tokens for < 5 seconds
+             * - 3 tokens for 5->8 seconds
+             * - 2 tokens for > 8 seconds
+             */
+            int tokensEarned = 0;
+            int seconds = (int)(((TimeSpan)(eq.equationEndTime - eq.equationStartTime)).TotalSeconds);
+            if (eq.DigitLength <= 1)
+            {
+                if (seconds < 4)
+                    tokensEarned = 3;
+                else if (seconds < 7)
+                    tokensEarned = 2;
+                else
+                    tokensEarned = 1;
+            }
+            else if (eq.DigitLength <= 3)
+            {
+                if (seconds < 5)
+                    tokensEarned = 5;
+                else if (seconds < 8)
+                    tokensEarned = 3;
+                else
+                    tokensEarned = 2;
+            }
+
+            return tokensEarned;
+        }
+
+        private void GetExistingTokens()
+        {
+            try
+            {
+                String fileName = ResultsDirectory + "tokens.dat";
+                TextReader reader = new StreamReader(fileName);
+
+                String line = reader.ReadLine();
+                if (line != null)
+                {
+                    this.studentTokens = int.Parse(line);
+                }
+                reader.Close();
+            }
+            catch (Exception)
+            {
+                this.studentTokens = 0;
+            }
         }
 
         private void ShowCurrentEquation()
@@ -605,6 +725,9 @@ namespace MathTime
             SessionStartForm startForm = new SessionStartForm();
             startForm.ShowDialog();
 
+            if (startForm.DialogResult != DialogResult.OK)
+                return;
+
             int selectedIndex = startForm.SessionType;
             String identifier = startForm.IdentificationString;
             if (identifier.Trim().Length == 0)
@@ -620,6 +743,8 @@ namespace MathTime
             }
 
             this.ClearPreviousSession();
+            this.studentIdentifier = identifier;
+
             if (selectedIndex == 0)
                 this.StartNewSession(0, 9, false, 20);
             else if (selectedIndex == 1)
@@ -632,7 +757,45 @@ namespace MathTime
                 return;
             }
 
-            this.studentIdentifier = identifier;
+            this.redeemTokensToolStripMenuItem.Enabled = true;
+        }
+
+        public String ResultsDirectory
+        {
+            get
+            {
+                string directoryString = Directory.GetCurrentDirectory() + "\\results\\" + this.studentIdentifier + "\\";
+                Directory.CreateDirectory(directoryString);
+                return directoryString;
+            }
+        }
+
+        public void RedeemTokensDialog()
+        {
+            RedeemTokensForm redeemForm = new RedeemTokensForm();
+            redeemForm.CurrentStudentID = this.studentIdentifier;
+            redeemForm.CurrentStudentTokenCount = this.studentTokens;
+            redeemForm.ShowDialog();
+
+            if (redeemForm.DialogResult == DialogResult.OK)
+            {
+                int tokensRequested = redeemForm.RequestedTokensCount;
+                if (tokensRequested <= 0)
+                {
+                    MessageBox.Show("You must choose a positive number of tokens to redeem.");
+                    return;
+                }
+                else if (tokensRequested > this.studentTokens)
+                {
+                    MessageBox.Show("You don't have " + tokensRequested.ToString() + ". You currently have " + this.studentTokens.ToString() + " tokens. Please choose a smaller number.");
+                    return;
+                }
+
+                this.studentTokens -= tokensRequested;
+                this.WriteTokenFile(ResultsDirectory);
+
+                MessageBox.Show("You redeemed " + tokensRequested.ToString() + " tokens. You now have " + this.studentTokens.ToString() + " remaining.");
+            }
         }
 
         private void showSessionStatusToolStripMenuItem_Click(object sender, EventArgs e)
@@ -699,6 +862,11 @@ namespace MathTime
         {
             StartNewSessionDialog();
         }
+
+        private void redeemTokensToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            RedeemTokensDialog();
+        }
     }
 
     class MathTimeEquation
@@ -706,6 +874,7 @@ namespace MathTime
         public int topValue;
         public int bottomValue;
         public int userAnswer;
+        public int tokenEarnedValue;
         public bool wasCorrect;
         public DateTime equationStartTime;
         public DateTime hundredsDigitEnteredTime;
@@ -723,6 +892,7 @@ namespace MathTime
             topValue = 0;
             bottomValue = 0;
             userAnswer = 0;
+            tokenEarnedValue = 0;
             wasCorrect = false;
             equationStartTime = DateTime.MinValue;
             hundredsDigitEnteredTime = DateTime.MinValue;
