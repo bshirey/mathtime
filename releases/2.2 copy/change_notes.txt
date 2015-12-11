@@ -1,0 +1,16 @@
+The following changes were made to MathTime:
+
+---------------------------------------------
+Version 2.2 - 9/10/2010
+- The equations files are no longer needed.  The equations are automatically and randomly generated.
+- 20 single digit equations
+- 10 triple digit equations
+- 30 variable digit equations, 10 sequences of single-single-triple digit equations (10x3)
+
+---------------------------------------------
+Version 2.1 - 8/30/2010
+- Four solution digit fields are available
+- Carry digit text boxes are available
+- Pressing the Enter key effectively clicks the "Next" button
+- Renamed the columns in the results Excel file
+- Added the results .log file which contains the text from the status window (which is hidden by default)
