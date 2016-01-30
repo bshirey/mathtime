@@ -141,6 +141,17 @@ namespace MathTime
             }
         }
 
+        private int GetTokensEarnedThisSession()
+        {
+            int totalTokensEarned = 0;
+            foreach (MathTimeEquation eq in equationsForSession)
+            {
+                totalTokensEarned += eq.tokenEarnedValue;
+            }
+
+            return totalTokensEarned;
+        }
+
         private void DoNextEquationButtonClick()
         {
             this.nextEquationButton.Focus();
@@ -175,11 +186,7 @@ namespace MathTime
                 this.currentEquationIndex = equationsForSession.Count - 1;
                 this.nextEquationButton.Enabled = false;
 
-                int totalTokensEarned = 0;
-                foreach(MathTimeEquation eq in equationsForSession)
-                {
-                    totalTokensEarned += eq.tokenEarnedValue;
-                }
+                int totalTokensEarned = this.GetTokensEarnedThisSession();
 
                 WriteResultsToFile();
 
@@ -274,11 +281,7 @@ namespace MathTime
         {
             try
             {
-                // calcuate the total number of earned tokens for this session
-                foreach (MathTimeEquation eq in this.equationsForSession)
-                {
-                    this.studentTokens += eq.tokenEarnedValue;
-                }
+                this.studentTokens += GetTokensEarnedThisSession();
 
                 String fileName = directoryString + "tokens.dat";
                 TextWriter writer = new StreamWriter(fileName);
@@ -302,13 +305,22 @@ namespace MathTime
         {
             MathTimeEquation currEq = equationsForSession[currentEquationIndex];
             currEq.tokenEarnedValue = this.GetTokensEarnedForEquation(currEq);
+            int tokensThisSession = this.GetTokensEarnedThisSession();
 
-            if (!currEq.wasCorrect)
+            if (currEq.wasCorrect)
+            {
+                this.correctAnswerTooltip.Hide(this.tooltipAnchorLabel);
+                String message = String.Format("You have answered question {0:d} correctly!\n\nYou earned {1:d} points for this equation.\n\nYou now have earned {2:d} points in this session and have {3:d} total points.",
+                    this.currentEquationIndex + 1, currEq.tokenEarnedValue, tokensThisSession, this.studentTokens + tokensThisSession);
+                this.correctAnswerTooltip.Show(message, this.tooltipAnchorLabel, 4000);
+            }
+            else
             {
                 currEq.tokenEarnedValue = 0;
             }
 
             AddStatusMessageAndScroll(String.Format("Equation {0:d} earned {1:d} tokens.", currentEquationIndex + 1, currEq.tokenEarnedValue));
+            AddStatusMessageAndScroll(String.Format("{0:d} tokens earned so far this session.", tokensThisSession));
         }
 
         private void CheckDigitTimes()

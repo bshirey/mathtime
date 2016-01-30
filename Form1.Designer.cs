@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.threeDigitEquationTopLabel = new System.Windows.Forms.Label();
             this.equationSymbolLabel = new System.Windows.Forms.Label();
             this.summationLinePanel = new System.Windows.Forms.Panel();
@@ -54,6 +55,8 @@
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.showSessionStatusToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.correctAnswerTooltip = new System.Windows.Forms.ToolTip(this.components);
+            this.tooltipAnchorLabel = new System.Windows.Forms.Label();
             this.statusGroupBox.SuspendLayout();
             this.currentThreeDigitEquationGroupBox.SuspendLayout();
             this.instructionsGroupBox.SuspendLayout();
@@ -111,6 +114,7 @@
             // 
             // currentThreeDigitEquationGroupBox
             // 
+            this.currentThreeDigitEquationGroupBox.Controls.Add(this.tooltipAnchorLabel);
             this.currentThreeDigitEquationGroupBox.Controls.Add(this.thousandsCarryNotesTextBox);
             this.currentThreeDigitEquationGroupBox.Controls.Add(this.hundredsCarryNotesTextBox);
             this.currentThreeDigitEquationGroupBox.Controls.Add(this.tensCarryNotesTextBox);
@@ -338,6 +342,19 @@
             this.showSessionStatusToolStripMenuItem.Text = "Show Session Status";
             this.showSessionStatusToolStripMenuItem.Click += new System.EventHandler(this.showSessionStatusToolStripMenuItem_Click);
             // 
+            // correctAnswerTooltip
+            // 
+            this.correctAnswerTooltip.ToolTipIcon = System.Windows.Forms.ToolTipIcon.Info;
+            this.correctAnswerTooltip.ToolTipTitle = "Congratulations!";
+            // 
+            // tooltipAnchorLabel
+            // 
+            this.tooltipAnchorLabel.AutoSize = true;
+            this.tooltipAnchorLabel.Location = new System.Drawing.Point(696, 11);
+            this.tooltipAnchorLabel.Name = "tooltipAnchorLabel";
+            this.tooltipAnchorLabel.Size = new System.Drawing.Size(0, 13);
+            this.tooltipAnchorLabel.TabIndex = 10;
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -394,6 +411,8 @@
         private System.Windows.Forms.TextBox hundredsCarryNotesTextBox;
         private System.Windows.Forms.TextBox tensCarryNotesTextBox;
         private System.Windows.Forms.ToolStripMenuItem redeemTokensToolStripMenuItem;
+        private System.Windows.Forms.ToolTip correctAnswerTooltip;
+        private System.Windows.Forms.Label tooltipAnchorLabel;
     }
 }
 
