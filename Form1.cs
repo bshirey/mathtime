@@ -251,7 +251,7 @@ namespace MathTime
                 }
                 writer.Close();
 
-                MessageBox.Show("Data and results saved to the file \"" + this.studentIdentifier + "\\" + fileName + "\"");
+                //MessageBox.Show("Data and results saved to the file \"" + this.studentIdentifier + "\\" + fileName + "\"");
             }
             catch (IOException)
             {
